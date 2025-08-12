@@ -25,13 +25,11 @@ class Pipeline:
         """
         import os
         import json
-        is_local = os.path.exists(f"{path}/pipeline.json")
-
-        if is_local:
-            config_file = f"{path}/pipeline.json"
-        else:
-            from huggingface_hub import hf_hub_download
-            config_file = hf_hub_download(path, "pipeline.json")
+        
+        # 로컬 파일만 사용
+        config_file = f"{path}/pipeline.json"
+        if not os.path.exists(config_file):
+            raise FileNotFoundError(f"Pipeline config not found at {config_file}. Please ensure the model files are downloaded locally.")
 
         with open(config_file, 'r') as f:
             args = json.load(f)['args']
@@ -39,8 +37,11 @@ class Pipeline:
         _models = {}
         for k, v in args['models'].items():
             try:
-                _models[k] = models.from_pretrained(f"{path}/{v}")
+                # 상대 경로를 절대 경로로 변환
+                model_path = os.path.join(path, v)
+                _models[k] = models.from_pretrained(model_path)
             except:
+                # 절대 경로로 시도
                 _models[k] = models.from_pretrained(v)
 
         new_pipeline = Pipeline(_models)

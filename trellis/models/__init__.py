@@ -42,25 +42,22 @@ def from_pretrained(path: str, **kwargs):
     Load a model from a pretrained checkpoint.
 
     Args:
-        path: The path to the checkpoint. Can be either local path or a Hugging Face model name.
+        path: The path to the checkpoint. Must be a local path.
               NOTE: config file and model file should take the name f'{path}.json' and f'{path}.safetensors' respectively.
         **kwargs: Additional arguments for the model constructor.
     """
     import os
     import json
     from safetensors.torch import load_file
-    is_local = os.path.exists(f"{path}.json") and os.path.exists(f"{path}.safetensors")
-
-    if is_local:
-        config_file = f"{path}.json"
-        model_file = f"{path}.safetensors"
-    else:
-        from huggingface_hub import hf_hub_download
-        path_parts = path.split('/')
-        repo_id = f'{path_parts[0]}/{path_parts[1]}'
-        model_name = '/'.join(path_parts[2:])
-        config_file = hf_hub_download(repo_id, f"{model_name}.json")
-        model_file = hf_hub_download(repo_id, f"{model_name}.safetensors")
+    
+    # 로컬 파일만 사용
+    config_file = f"{path}.json"
+    model_file = f"{path}.safetensors"
+    
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"Config file not found at {config_file}. Please ensure the model files are downloaded locally.")
+    if not os.path.exists(model_file):
+        raise FileNotFoundError(f"Model file not found at {model_file}. Please ensure the model files are downloaded locally.")
 
     with open(config_file, 'r') as f:
         config = json.load(f)
